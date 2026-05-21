@@ -32,8 +32,21 @@ def test_acl_get_is_redacted() -> None:
     assert redacted[2].principal == "SYSTEM"
 
 
-def test_user_entries_are_converted_to_lazy_permission_groups() -> None:
+def test_conversion_skips_grouping_when_within_limit() -> None:
     service = build_acl_service()
+    entries = [
+        AclEntry(principal_type="user", principal_id="u1", permissions="r--"),
+        AclEntry(principal_type="user", principal_id="u2", permissions="rw-"),
+    ]
+
+    result = service.convert_users_to_groups(entries)
+
+    assert len(result) == 2
+    assert all(entry.principal_type == "user" for entry in result)
+
+
+def test_user_entries_are_converted_to_lazy_permission_groups() -> None:
+    service = build_acl_service(max_records=2)
     entries = [
         AclEntry(principal_type="user", principal_id="u1", permissions="r--"),
         AclEntry(principal_type="user", principal_id="u2", permissions="r--"),
@@ -63,7 +76,7 @@ def test_conversion_respects_acl_record_limit() -> None:
 
 
 def test_ungroup_entries_restores_known_user_entries() -> None:
-    service = build_acl_service()
+    service = build_acl_service(max_records=1)
     source_entries = [
         AclEntry(principal_type="user", principal_id="u1", permissions="r--"),
         AclEntry(principal_type="user", principal_id="u2", permissions="r--"),
@@ -105,10 +118,13 @@ def test_group_creation_uses_administrative_unit() -> None:
         group_prefix="perm-",
         administrative_unit_id="au-123",
     )
-    service = AclService(policy=AclPolicy(), mapper=mapper)
+    service = AclService(policy=AclPolicy(max_records=1), mapper=mapper)
 
     service.convert_users_to_groups(
-        [AclEntry(principal_type="user", principal_id="u1", permissions="r--")]
+        [
+            AclEntry(principal_type="user", principal_id="u1", permissions="r--"),
+            AclEntry(principal_type="user", principal_id="u2", permissions="r--"),
+        ]
     )
 
     assert directory.calls == [("perm-r__", "au-123")]

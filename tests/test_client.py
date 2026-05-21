@@ -40,9 +40,9 @@ class FakeSigner:
         return f"https://example.test/{path}?perm={permissions}&exp={expiry_minutes}"
 
 
-def build_client(path_client: FakePathClient, observer: ChangeObserver | None = None):
+def build_client(path_client: FakePathClient, observer: ChangeObserver | None = None, max_records: int = 64):
     acl_service = AclService(
-        policy=AclPolicy(max_records=64),
+        policy=AclPolicy(max_records=max_records),
         mapper=PermissionGroupMapper(
             directory=InMemoryPermissionGroupDirectory(),
             group_prefix="perm-",
@@ -76,7 +76,7 @@ def test_get_acl_returns_redacted_entries() -> None:
 
 def test_set_acl_converts_users_to_groups_before_write() -> None:
     path_client = FakePathClient(acl="")
-    client = build_client(path_client)
+    client = build_client(path_client, max_records=1)
 
     response = client.set_acl(
         "/test",
@@ -92,9 +92,27 @@ def test_set_acl_converts_users_to_groups_before_write() -> None:
     assert all(entry.principal == "REDACTED" for entry in response)
 
 
-def test_get_acl_returns_ungrouped_after_compacted_write() -> None:
+def test_set_acl_preserves_users_when_within_limit() -> None:
     path_client = FakePathClient(acl="")
     client = build_client(path_client)
+
+    response = client.set_acl(
+        "/test",
+        [
+            AclEntry(principal_type="user", principal_id="u1", permissions="r--"),
+            AclEntry(principal_type="user", principal_id="u2", permissions="r--"),
+        ],
+    )
+
+    assert path_client.set_acl is not None
+    assert path_client.set_acl.count("user:") == 2
+    assert path_client.set_acl.count("group:") == 0
+    assert all(entry.principal_type == "user" for entry in response)
+
+
+def test_get_acl_returns_ungrouped_after_compacted_write() -> None:
+    path_client = FakePathClient(acl="")
+    client = build_client(path_client, max_records=1)
     client.set_acl(
         "/test",
         [

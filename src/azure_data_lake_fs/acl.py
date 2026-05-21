@@ -184,8 +184,11 @@ class AclService:
         return redacted
 
     def convert_users_to_groups(self, entries: list[AclEntry]) -> list[AclEntry]:
+        deduplicated = self._deduplicate(entries)
+        if len(deduplicated) <= self._policy.max_records:
+            return deduplicated
         converted: list[AclEntry] = []
-        for entry in entries:
+        for entry in deduplicated:
             if entry.principal_type == "user" and entry.principal_id:
                 group_id = self._mapper.map_user_to_group(
                     user_id=entry.principal_id,
@@ -208,12 +211,13 @@ class AclService:
         expanded: list[AclEntry] = []
         for entry in entries:
             expanded.extend(self._mapper.expand_group_entry(entry))
-        return self._deduplicate_and_validate(expanded)
+        return self._deduplicate(expanded)
 
-    def _deduplicate_and_validate(self, entries: list[AclEntry]) -> list[AclEntry]:
-        deduplicated: dict[tuple[str, str, str, bool], AclEntry] = {}
+    @staticmethod
+    def _deduplicate(entries: list[AclEntry]) -> list[AclEntry]:
+        seen: dict[tuple[str, str, str, bool], AclEntry] = {}
         for entry in entries:
-            deduplicated[
+            seen[
                 (
                     entry.principal_type,
                     entry.principal_id or "",
@@ -221,7 +225,10 @@ class AclService:
                     entry.default,
                 )
             ] = entry
-        normalized = list(deduplicated.values())
+        return list(seen.values())
+
+    def _deduplicate_and_validate(self, entries: list[AclEntry]) -> list[AclEntry]:
+        normalized = self._deduplicate(entries)
         if len(normalized) > self._policy.max_records:
             message = (
                 f"ACL record count ({len(normalized)}) exceeds "
