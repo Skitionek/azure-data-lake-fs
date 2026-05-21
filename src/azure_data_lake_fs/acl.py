@@ -83,7 +83,7 @@ class InMemoryPermissionGroupDirectory:
         display_name: str,
         administrative_unit_id: str | None = None,
     ) -> str:
-        _ = administrative_unit_id
+        """Return an in-memory group id; administrative_unit_id is ignored."""
         existing = self._display_name_to_id.get(display_name)
         if existing is not None:
             return existing
