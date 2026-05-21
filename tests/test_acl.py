@@ -1,3 +1,5 @@
+import pytest
+
 from azure_data_lake_fs.acl import (
     AclEntry,
     AclService,
@@ -55,8 +57,6 @@ def test_conversion_respects_acl_record_limit() -> None:
         AclEntry(principal_type="user", principal_id="u2", permissions="rw-"),
     ]
 
-    try:
+    with pytest.raises(ValueError) as error:
         service.convert_users_to_groups(entries)
-        assert False, "Expected ValueError"
-    except ValueError as error:
-        assert "exceeds" in str(error)
+    assert "exceeds" in str(error.value)
