@@ -9,22 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add Python package `azure-data-lake-fs` with configurable Azure Data Lake wrapper API for ACL operations, indirect transfer contexts, and change observation flow ([#PR])
-- Add ACL transformation module with redacted ACL responses, lazy permission-to-group mapping, and on-the-fly user-to-group conversion to constrain ACL record count ([#PR])
-- Add indirect upload/download context API returning SAS URLs instead of direct content transfer ([#PR])
-- Add Service Bus queue observation process mode via polling observer with stop controls ([#PR])
-- Add unit tests for ACL behavior, transfer context generation, observer processing, config validation, and wrapper client integration ([#PR])
-- Add Bicep template `infra/azure-data-lake-servicebus.bicep` to provision ADLS Gen2 + Service Bus + Event Grid wiring for local integration setup ([#PR])
+- Add Python package `azure-data-lake-fs` with configurable Azure Data Lake wrapper API for ACL operations, indirect transfer contexts, and change observation flow ([#1])
+- Add ACL transformation module with redacted ACL responses, lazy permission-to-group mapping, and on-the-fly user-to-group conversion to constrain ACL record count ([#1])
+- Add indirect upload/download context API returning SAS URLs instead of direct content transfer ([#1])
+- Add Service Bus queue observation process mode via polling observer with stop controls ([#1])
+- Add unit tests for ACL behavior, transfer context generation, observer processing, config validation, and wrapper client integration ([#1])
+- Add Bicep template `infra/azure-data-lake-servicebus.bicep` to provision ADLS Gen2 + Service Bus + Event Grid wiring for local integration setup ([#1])
 
 ### Changed
 
-- Spelling linters (`SPELL_CSPELL`, `SPELL_MISSPELL`, `SPELL_PROSELINT`, `SPELL_VALE`) now raise warnings instead of errors via `.mega-linter.yml` ([#PR])
-- Bump MegaLinter from `v8` to `v9.4.0` in `lint.yml` ([#PR])
-- `lint.yml` MegaLinter now auto-selects the appropriate flavor (python, javascript, java, go, ruby, php, rust, dotnet, terraform, swift, or `all`) based on changed file extensions; mixed-language PRs fall back to `all` ([#PR])
+- Spelling linters (`SPELL_CSPELL`, `SPELL_MISSPELL`, `SPELL_PROSELINT`, `SPELL_VALE`) now raise warnings instead of errors via `.mega-linter.yml` ([#1])
+- Bump MegaLinter from `v8` to `v9.4.0` in `lint.yml` ([#1])
+- `lint.yml` MegaLinter now auto-selects the appropriate flavor (python, javascript, java, go, ruby, php, rust, dotnet, terraform, swift, or `all`) based on changed file extensions; mixed-language PRs fall back to `all` ([#1])
 - `copilot-auto-fix.yml` now runs GitHub Copilot CLI directly on the runner to fix failing tests and opens a fix PR, instead of posting a `@copilot` comment
-- Replace in-repo lint pipeline implementation with reusable `Skitionek/lint` action in `.github/workflows/lint.yml` ([#PR])
-- Return ungrouped ACL records from `get_acl` when groups originate from mapper-managed user compaction ([#PR])
-- Add optional administrative-unit scoping for lazy permission-group creation via `AclPolicy.administrative_unit_id` and `PermissionGroupMapper` ([#PR])
+- Replace in-repo lint pipeline implementation with reusable `Skitionek/lint` action in `.github/workflows/lint.yml` ([#1])
+- Return ungrouped ACL records from `get_acl` when groups originate from mapper-managed user compaction ([#1])
+- Add optional administrative-unit scoping for lazy permission-group creation via `AclPolicy.administrative_unit_id` and `PermissionGroupMapper` ([#1])
 
 ### Fixed
 
@@ -32,3 +32,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Correct dead link in CHANGELOG.md
 
 [Unreleased]: https://github.com/Skitionek/template
+[#1]: https://github.com/Skitionek/azure-data-lake-fs/pull/1
