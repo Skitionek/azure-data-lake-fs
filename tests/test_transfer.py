@@ -1,3 +1,5 @@
+import pytest
+
 from azure_data_lake_fs.config import AzureDataLakeFsConfig
 from azure_data_lake_fs.transfer import AzureDataLakeSasSigner, IndirectTransferService
 
@@ -53,12 +55,8 @@ def test_signer_rejects_empty_path() -> None:
     )
     signer = AzureDataLakeSasSigner(config=config)
 
-    try:
+    with pytest.raises(ValueError, match="path must not be empty"):
         signer.sign("", "r", 5)
-    except ValueError as error:
-        assert str(error) == "path must not be empty"
-    else:
-        raise AssertionError("Expected ValueError for empty path")
 
 
 def test_signer_rejects_directory_path() -> None:
@@ -69,9 +67,5 @@ def test_signer_rejects_directory_path() -> None:
     )
     signer = AzureDataLakeSasSigner(config=config)
 
-    try:
+    with pytest.raises(ValueError, match="path must reference a file"):
         signer.sign("folder/", "r", 5)
-    except ValueError as error:
-        assert str(error) == "path must reference a file"
-    else:
-        raise AssertionError("Expected ValueError for directory path")
