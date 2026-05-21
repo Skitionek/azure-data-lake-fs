@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add indirect upload/download context API returning SAS URLs instead of direct content transfer ([#PR])
 - Add Service Bus queue observation process mode via polling observer with stop controls ([#PR])
 - Add unit tests for ACL behavior, transfer context generation, observer processing, config validation, and wrapper client integration ([#PR])
+- Add Bicep template `infra/azure-data-lake-servicebus.bicep` to provision ADLS Gen2 + Service Bus + Event Grid wiring for local integration setup ([#PR])
 
 ### Changed
 
@@ -22,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `lint.yml` MegaLinter now auto-selects the appropriate flavor (python, javascript, java, go, ruby, php, rust, dotnet, terraform, swift, or `all`) based on changed file extensions; mixed-language PRs fall back to `all` ([#PR])
 - `copilot-auto-fix.yml` now runs GitHub Copilot CLI directly on the runner to fix failing tests and opens a fix PR, instead of posting a `@copilot` comment
 - Replace in-repo lint pipeline implementation with reusable `Skitionek/lint` action in `.github/workflows/lint.yml` ([#PR])
+- Return ungrouped ACL records from `get_acl` when groups originate from mapper-managed user compaction ([#PR])
+- Add optional administrative-unit scoping for lazy permission-group creation via `AclPolicy.administrative_unit_id` and `PermissionGroupMapper` ([#PR])
 
 ### Fixed
 

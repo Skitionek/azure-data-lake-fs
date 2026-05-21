@@ -22,6 +22,7 @@ class FakePathClient:
 
     def set_access_control(self, acl: str):
         self.set_acl = acl
+        self.acl = acl
         return {"ok": True}
 
 
@@ -45,6 +46,7 @@ def build_client(path_client: FakePathClient, observer: ChangeObserver | None = 
         mapper=PermissionGroupMapper(
             directory=InMemoryPermissionGroupDirectory(),
             group_prefix="perm-",
+            administrative_unit_id="au-123",
         ),
     )
     transfer_service = IndirectTransferService(
@@ -86,8 +88,25 @@ def test_set_acl_converts_users_to_groups_before_write() -> None:
 
     assert path_client.set_acl is not None
     assert path_client.set_acl.count("group:") == 1
-    assert len(response) == 1
-    assert response[0].principal == "REDACTED"
+    assert len(response) == 2
+    assert all(entry.principal == "REDACTED" for entry in response)
+
+
+def test_get_acl_returns_ungrouped_after_compacted_write() -> None:
+    path_client = FakePathClient(acl="")
+    client = build_client(path_client)
+    client.set_acl(
+        "/test",
+        [
+            AclEntry(principal_type="user", principal_id="u1", permissions="r--"),
+            AclEntry(principal_type="user", principal_id="u2", permissions="r--"),
+        ],
+    )
+
+    result = client.get_acl("/test")
+
+    assert len(result) == 2
+    assert all(entry.principal_type == "user" for entry in result)
 
 
 def test_run_change_observer_once() -> None:

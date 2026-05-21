@@ -27,12 +27,15 @@ class AclPolicy:
     max_records: int = 64
     group_prefix: str = "adlfs-perm-"
     redact_raw_records: bool = True
+    administrative_unit_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.max_records <= 0:
             raise ValueError("ACL max_records must be positive")
         if not self.group_prefix:
             raise ValueError("ACL group_prefix must not be empty")
+        if self.administrative_unit_id is not None and not self.administrative_unit_id:
+            raise ValueError("ACL administrative_unit_id must not be empty")
 
 
 @dataclass(frozen=True)
