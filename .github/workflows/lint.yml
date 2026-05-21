@@ -1,0 +1,42 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Default to read-only; individual jobs grant only the permissions they need.
+permissions: read-all
+
+jobs:
+  megalinter:
+    name: MegaLinter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to commit auto-fixes
+      issues: write
+      pull-requests: write
+      security-events: write # needed to upload SARIF
+
+    steps:
+      - name: Run unified lint action
+        uses: Skitionek/lint@44cdaca8cb2c10077e34583e91f1f574369b0f32
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pat: ${{ secrets.PAT }}
+
+      # ── Upload SARIF for PR annotations ───────────────────────────────────
+      - name: Upload SARIF report
+        if: >
+          (github.event_name == 'pull_request' || github.event_name == 'push') &&
+          always()
+        uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v3
+        # continue-on-error so the job doesn't fail when SARIF wasn't produced
+        # (e.g. no linting errors were found, or the reporter was not enabled).
+        continue-on-error: true
+        with:
+          sarif_file: megalinter-reports/megalinter-report.sarif
+          category: megalinter

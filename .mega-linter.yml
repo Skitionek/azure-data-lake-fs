@@ -1,0 +1,9 @@
+# MegaLinter configuration
+# https://megalinter.io/latest/configuration/
+
+# Spelling linters report warnings instead of blocking the build
+DISABLE_ERRORS_LINTERS:
+  - SPELL_CSPELL
+  - SPELL_MISSPELL
+  - SPELL_PROSELINT
+  - SPELL_VALE
