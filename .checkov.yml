@@ -1,0 +1,4 @@
+skip-check:
+  - CKV_AZURE_35 # Dev/test template does not enforce private network-only access.
+  - CKV_AZURE_43 # Name uses dynamic prefix and is validated by deployment constraints.
+  - CKV_AZURE_206 # Local setup keeps Standard_LRS for lower cost.

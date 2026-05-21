@@ -10,9 +10,7 @@ class FakeReceiver:
         self.completed: list[str] = []
         self.closed = False
 
-    def receive_messages(
-        self, max_message_count: int, max_wait_time: int
-    ) -> list[str]:
+    def receive_messages(self, max_message_count: int, max_wait_time: int) -> list[str]:
         _ = (max_message_count, max_wait_time)
         returned = self.messages[:]
         self.messages.clear()

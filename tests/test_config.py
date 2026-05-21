@@ -1,6 +1,7 @@
 import pytest
 
-from azure_data_lake_fs.config import AclPolicy, AzureDataLakeFsConfig, ServiceBusSettings
+from azure_data_lake_fs.config import (AclPolicy, AzureDataLakeFsConfig,
+                                       ServiceBusSettings)
 
 
 def test_invalid_acl_policy_raises() -> None:
@@ -29,7 +30,9 @@ def test_empty_administrative_unit_id_raises() -> None:
 
 def test_credential_accepted_instead_of_account_key() -> None:
     class FakeCredential:
-        pass
+        def get_token(self, *scopes, **kwargs):
+            _ = (scopes, kwargs)
+            return object()
 
     config = AzureDataLakeFsConfig(
         account_name="myacct",

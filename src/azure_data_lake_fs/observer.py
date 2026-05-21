@@ -12,17 +12,21 @@ class QueueReceiver(Protocol):
         self, max_message_count: int, max_wait_time: int
     ) -> Iterable[Any]:
         """Receive queue messages."""
+        ...
 
     def complete_message(self, message: Any) -> None:
         """Complete/acknowledge a message."""
+        ...
 
     def close(self) -> None:
         """Close resources."""
+        ...
 
 
 class QueueReceiverFactory(Protocol):
     def __call__(self) -> QueueReceiver:
         """Create a queue receiver."""
+        ...
 
 
 class ChangeObserver:

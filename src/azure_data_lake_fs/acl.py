@@ -69,6 +69,7 @@ class PermissionGroupDirectory(Protocol):
         administrative_unit_id: str | None = None,
     ) -> str:
         """Return group object id for display name, creating if missing."""
+        ...
 
 
 class InMemoryPermissionGroupDirectory:
@@ -222,7 +223,9 @@ class AclService:
             ] = entry
         normalized = list(deduplicated.values())
         if len(normalized) > self._policy.max_records:
-            raise ValueError(
-                f"ACL record count ({len(normalized)}) exceeds {self._policy.max_records}"
+            message = (
+                f"ACL record count ({len(normalized)}) exceeds "
+                f"{self._policy.max_records}"
             )
+            raise ValueError(message)
         return normalized

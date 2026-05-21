@@ -1,11 +1,8 @@
 from dataclasses import dataclass
 
-from azure_data_lake_fs.acl import (
-    AclEntry,
-    AclService,
-    InMemoryPermissionGroupDirectory,
-    PermissionGroupMapper,
-)
+from azure_data_lake_fs.acl import (AclEntry, AclService,
+                                    InMemoryPermissionGroupDirectory,
+                                    PermissionGroupMapper)
 from azure_data_lake_fs.client import AzureDataLakeFsClient
 from azure_data_lake_fs.config import AclPolicy, AzureDataLakeFsConfig
 from azure_data_lake_fs.observer import ChangeObserver
@@ -125,11 +122,15 @@ def test_run_change_observer_once() -> None:
         def close(self):
             pass
 
-    observer = ChangeObserver(receiver_factory=lambda: Receiver(), max_wait_time_seconds=1)
+    observer = ChangeObserver(
+        receiver_factory=lambda: Receiver(), max_wait_time_seconds=1
+    )
     client = build_client(FakePathClient(acl=""), observer=observer)
     seen: list[str] = []
 
-    processed = client.run_change_observer(lambda message: seen.append(message), once=True)
+    processed = client.run_change_observer(
+        lambda message: seen.append(message), once=True
+    )
 
     assert processed == 2
     assert seen == ["a", "b"]
