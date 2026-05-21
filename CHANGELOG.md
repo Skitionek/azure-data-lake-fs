@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add Python package `azure-data-lake-fs` with configurable Azure Data Lake wrapper API for ACL operations, indirect transfer contexts, and change observation flow ([#PR])
+- Add ACL transformation module with redacted ACL responses, lazy permission-to-group mapping, and on-the-fly user-to-group conversion to constrain ACL record count ([#PR])
+- Add indirect upload/download context API returning SAS URLs instead of direct content transfer ([#PR])
+- Add Service Bus queue observation process mode via polling observer with stop controls ([#PR])
+- Add unit tests for ACL behavior, transfer context generation, observer processing, config validation, and wrapper client integration ([#PR])
+
 ### Changed
 
 - Spelling linters (`SPELL_CSPELL`, `SPELL_MISSPELL`, `SPELL_PROSELINT`, `SPELL_VALE`) now raise warnings instead of errors via `.mega-linter.yml` ([#PR])
@@ -19,9 +27,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Pin all third-party GitHub Actions to full commit SHAs for supply-chain security
 - Correct dead link in CHANGELOG.md
-
-### Added
-
-- Initial repository template with GitHub Copilot automation integration
 
 [Unreleased]: https://github.com/Skitionek/template
