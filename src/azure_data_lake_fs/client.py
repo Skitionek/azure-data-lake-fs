@@ -57,16 +57,29 @@ class AzureDataLakeFsClient:
     ) -> "AzureDataLakeFsClient":
         from azure.storage.filedatalake import DataLakeServiceClient
 
+        credential = (
+            config.account_key
+            if config.account_key is not None
+            else config.credential
+        )
         data_lake_service_client = DataLakeServiceClient(
             account_url=config.account_url,
-            credential=config.account_key,
+            credential=credential,
         )
         file_system_client = data_lake_service_client.get_file_system_client(
             file_system=config.file_system_name
         )
+        signer = AzureDataLakeSasSigner(
+            config=config,
+            service_client=(
+                data_lake_service_client
+                if config.account_key is None
+                else None
+            ),
+        )
         transfer_service = IndirectTransferService(
             config=config,
-            signer=AzureDataLakeSasSigner(config=config),
+            signer=signer,
         )
         observer = (
             _build_observer_from_service_bus(service_bus_settings)

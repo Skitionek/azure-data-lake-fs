@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support any Azure credential (e.g. `DefaultAzureCredential`) in `AzureDataLakeFsConfig` via new optional `credential` field; `account_key` is now optional when `credential` is supplied ([#2])
+- `AzureDataLakeSasSigner` obtains a user-delegation key at runtime when a token credential is used instead of an account key ([#2])
 - Add Python package `azure-data-lake-fs` with configurable Azure Data Lake wrapper API for ACL operations, indirect transfer contexts, and change observation flow ([#1])
 - Add ACL transformation module with redacted ACL responses, lazy permission-to-group mapping, and on-the-fly user-to-group conversion to constrain ACL record count ([#1])
 - Add indirect upload/download context API returning SAS URLs instead of direct content transfer ([#1])
@@ -33,3 +35,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [Unreleased]: https://github.com/Skitionek/template
 [#1]: https://github.com/Skitionek/azure-data-lake-fs/pull/1
+[#2]: https://github.com/Skitionek/azure-data-lake-fs/pull/2

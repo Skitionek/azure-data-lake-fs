@@ -1,6 +1,15 @@
 """Configuration models for the Azure Data Lake wrapper."""
 
 from dataclasses import dataclass
+from typing import Any, Protocol, runtime_checkable
+
+
+@runtime_checkable
+class TokenCredential(Protocol):
+    """Minimal protocol matching ``azure.core.credentials.TokenCredential``."""
+
+    def get_token(self, *scopes: str, **kwargs: Any) -> Any:
+        """Return an ``AccessToken`` for the requested scopes."""
 
 
 @dataclass(frozen=True)
@@ -57,11 +66,19 @@ class ServiceBusSettings:
 
 @dataclass(frozen=True)
 class AzureDataLakeFsConfig:
-    """Top-level config for Azure Data Lake wrapper."""
+    """Top-level config for Azure Data Lake wrapper.
+
+    Provide either ``account_key`` (storage account key string) or a token
+    ``credential`` such as ``DefaultAzureCredential``.  When ``account_key``
+    is supplied it is used directly for SAS token generation.  When only
+    ``credential`` is supplied the client fetches a user-delegation key at
+    runtime to sign SAS URLs.
+    """
 
     account_name: str
     file_system_name: str
-    account_key: str
+    account_key: str | None = None
+    credential: TokenCredential | None = None
     acl_policy: AclPolicy = AclPolicy()
     sas_policy: SasPolicy = SasPolicy()
 
@@ -70,7 +87,11 @@ class AzureDataLakeFsConfig:
             raise ValueError("account_name must not be empty")
         if not self.file_system_name:
             raise ValueError("file_system_name must not be empty")
-        if not self.account_key:
+        if self.account_key is None and self.credential is None:
+            raise ValueError(
+                "Either account_key or credential must be provided"
+            )
+        if self.account_key is not None and not self.account_key:
             raise ValueError("account_key must not be empty")
 
     @property
