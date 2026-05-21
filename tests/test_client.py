@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 
-from azure_data_lake_fs.acl import (AclEntry, AclService,
-                                    InMemoryPermissionGroupDirectory,
-                                    PermissionGroupMapper)
+from azure_data_lake_fs.acl import (
+    AclEntry,
+    AclService,
+    InMemoryPermissionGroupDirectory,
+    PermissionGroupMapper,
+)
 from azure_data_lake_fs.client import AzureDataLakeFsClient
 from azure_data_lake_fs.config import AclPolicy, AzureDataLakeFsConfig
 from azure_data_lake_fs.observer import ChangeObserver

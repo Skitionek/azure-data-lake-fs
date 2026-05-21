@@ -1,7 +1,10 @@
 import pytest
 
-from azure_data_lake_fs.config import (AclPolicy, AzureDataLakeFsConfig,
-                                       ServiceBusSettings)
+from azure_data_lake_fs.config import (
+    AclPolicy,
+    AzureDataLakeFsConfig,
+    ServiceBusSettings,
+)
 
 
 def test_invalid_acl_policy_raises() -> None:

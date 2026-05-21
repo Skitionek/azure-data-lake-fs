@@ -1,8 +1,11 @@
 import pytest
 
-from azure_data_lake_fs.acl import (AclEntry, AclService,
-                                    InMemoryPermissionGroupDirectory,
-                                    PermissionGroupMapper)
+from azure_data_lake_fs.acl import (
+    AclEntry,
+    AclService,
+    InMemoryPermissionGroupDirectory,
+    PermissionGroupMapper,
+)
 from azure_data_lake_fs.config import AclPolicy
 
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from .acl import AclEntry, AclRedactedEntry, AclService
 from .config import AzureDataLakeFsConfig, ServiceBusSettings
@@ -86,7 +86,7 @@ class AzureDataLakeFsClient:
             else None
         )
         return cls(
-            file_system_client=file_system_client,
+            file_system_client=cast(FileSystemClient, file_system_client),
             acl_service=acl_service,
             transfer_service=transfer_service,
             observer=observer,
