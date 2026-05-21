@@ -57,6 +57,8 @@ class AzureDataLakeSasSigner:
         if not normalized_path:
             raise ValueError("path must not be empty")
         directory_name, _, file_name = normalized_path.rpartition("/")
+        if not file_name:
+            raise ValueError("path must reference a file")
         expiry = datetime.now(UTC) + timedelta(minutes=expiry_minutes)
 
         if self._config.account_key is not None:
