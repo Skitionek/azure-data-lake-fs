@@ -84,14 +84,14 @@ class AzureDataLakeFsClient:
         path_client = self._file_system_client.get_file_client(path)
         acl_string = _extract_acl_string(path_client.get_access_control())
         entries = self._acl_service.parse_acl(acl_string)
-        return self._acl_service.redact(entries)
+        return self._acl_service.redact(self._acl_service.ungroup_entries(entries))
 
     def set_acl(self, path: str, entries: list[AclEntry]) -> list[AclRedactedEntry]:
         normalized = self._acl_service.convert_users_to_groups(entries)
         acl_string = self._acl_service.serialize_acl(normalized)
         path_client = self._file_system_client.get_file_client(path)
         path_client.set_access_control(acl=acl_string)
-        return self._acl_service.redact(normalized)
+        return self._acl_service.redact(self._acl_service.ungroup_entries(normalized))
 
     def open_download_context(self, path: str):
         return self._transfer_service.open_download_context(path)

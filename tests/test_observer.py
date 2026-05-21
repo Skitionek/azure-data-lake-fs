@@ -1,4 +1,5 @@
 import threading
+import time
 
 from azure_data_lake_fs.observer import ChangeObserver
 
@@ -63,8 +64,9 @@ def test_run_forever_can_be_stopped() -> None:
         )
     )
     thread.start()
-    while len(seen) < 2:
-        pass
+    timeout = time.time() + 1.0
+    while len(seen) < 2 and time.time() < timeout:
+        time.sleep(0.01)
     observer.stop()
     thread.join(timeout=1)
 

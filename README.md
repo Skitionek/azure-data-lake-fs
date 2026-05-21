@@ -36,7 +36,11 @@ config = AzureDataLakeFsConfig(
     account_name="myaccount",
     file_system_name="myfs",
     account_key="***",
-    acl_policy=AclPolicy(max_records=64, group_prefix="adlfs-perm-"),
+    acl_policy=AclPolicy(
+        max_records=64,
+        group_prefix="adlfs-perm-",
+        administrative_unit_id="00000000-0000-0000-0000-000000000000",
+    ),
 )
 
 acl_service = AclService(
@@ -44,6 +48,7 @@ acl_service = AclService(
     mapper=PermissionGroupMapper(
         directory=InMemoryPermissionGroupDirectory(),
         group_prefix=config.acl_policy.group_prefix,
+        administrative_unit_id=config.acl_policy.administrative_unit_id,
     ),
 )
 
@@ -53,7 +58,9 @@ client = AzureDataLakeFsClient.from_azure(config=config, acl_service=acl_service
 ## ACL behavior
 
 - `get_acl(path)` returns redacted entries (`principal` is never exposed as raw object ID).
+- `get_acl(path)` returns ungrouped records for mapper-managed groups when user mappings are known.
 - `set_acl(path, entries)` converts named `user` ACL records to lazily-created permission groups.
+- Group creation can be scoped to an Entra administrative unit via `AclPolicy.administrative_unit_id`.
 - Conversion deduplicates resulting group ACLs and validates final ACL count against `max_records`.
 
 ## Indirect data transfer
@@ -75,3 +82,15 @@ Configure `ServiceBusSettings` and construct the client with observer enabled.
 - `PermissionGroupMapper` lazily creates/reuses one group per permission tuple.
 - `IndirectTransferService` provides SAS-context opening semantics.
 - `ChangeObserver` encapsulates queue receive/ack loop for process-mode observation.
+
+## Infrastructure bootstrap
+
+A deployable Bicep template is included at:
+
+- `infra/azure-data-lake-servicebus.bicep`
+
+It provisions:
+
+- ADLS Gen2-capable storage account (`isHnsEnabled: true`)
+- Service Bus namespace + queue
+- Event Grid system topic and subscription that forwards storage events to the queue

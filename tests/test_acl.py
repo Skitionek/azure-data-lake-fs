@@ -60,3 +60,51 @@ def test_conversion_respects_acl_record_limit() -> None:
     with pytest.raises(ValueError) as error:
         service.convert_users_to_groups(entries)
     assert "exceeds" in str(error.value)
+
+
+def test_ungroup_entries_restores_known_user_entries() -> None:
+    service = build_acl_service()
+    source_entries = [
+        AclEntry(principal_type="user", principal_id="u1", permissions="r--"),
+        AclEntry(principal_type="user", principal_id="u2", permissions="r--"),
+    ]
+    grouped_entries = service.convert_users_to_groups(source_entries)
+
+    ungrouped_entries = service.ungroup_entries(grouped_entries)
+
+    assert len(ungrouped_entries) == 2
+    principals = sorted(entry.principal_id for entry in ungrouped_entries)
+    assert principals == ["u1", "u2"]
+    assert all(entry.principal_type == "user" for entry in ungrouped_entries)
+
+
+def test_group_creation_uses_administrative_unit() -> None:
+    class RecordingDirectory(InMemoryPermissionGroupDirectory):
+        def __init__(self) -> None:
+            super().__init__()
+            self.calls: list[tuple[str, str | None]] = []
+
+        def ensure_group(
+            self,
+            display_name: str,
+            administrative_unit_id: str | None = None,
+        ) -> str:
+            self.calls.append((display_name, administrative_unit_id))
+            return super().ensure_group(
+                display_name=display_name,
+                administrative_unit_id=administrative_unit_id,
+            )
+
+    directory = RecordingDirectory()
+    mapper = PermissionGroupMapper(
+        directory=directory,
+        group_prefix="perm-",
+        administrative_unit_id="au-123",
+    )
+    service = AclService(policy=AclPolicy(), mapper=mapper)
+
+    service.convert_users_to_groups(
+        [AclEntry(principal_type="user", principal_id="u1", permissions="r--")]
+    )
+
+    assert directory.calls == [("perm-r__", "au-123")]

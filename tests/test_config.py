@@ -20,3 +20,8 @@ def test_account_url_is_derived_from_account_name() -> None:
         account_key="key",
     )
     assert config.account_url == "https://myacct.dfs.core.windows.net"
+
+
+def test_empty_administrative_unit_id_raises() -> None:
+    with pytest.raises(ValueError):
+        AclPolicy(administrative_unit_id="")

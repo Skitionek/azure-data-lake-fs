@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 
 from .config import AclPolicy
 
@@ -47,7 +47,7 @@ class AclEntry:
         if principal_type in {"mask", "other"}:
             normalized_principal_id = None
         return AclEntry(
-            principal_type=principal_type,  # type: ignore[arg-type]
+            principal_type=cast(PrincipalType, principal_type),
             principal_id=normalized_principal_id,
             permissions=permissions,
             default=default,
@@ -63,7 +63,11 @@ class AclRedactedEntry:
 
 
 class PermissionGroupDirectory(Protocol):
-    def ensure_group(self, display_name: str) -> str:
+    def ensure_group(
+        self,
+        display_name: str,
+        administrative_unit_id: str | None = None,
+    ) -> str:
         """Return group object id for display name, creating if missing."""
 
 
@@ -74,7 +78,12 @@ class InMemoryPermissionGroupDirectory:
         self._display_name_to_id: dict[str, str] = {}
         self._next_id: int = 1
 
-    def ensure_group(self, display_name: str) -> str:
+    def ensure_group(
+        self,
+        display_name: str,
+        administrative_unit_id: str | None = None,
+    ) -> str:
+        _ = administrative_unit_id
         existing = self._display_name_to_id.get(display_name)
         if existing is not None:
             return existing
@@ -87,10 +96,17 @@ class InMemoryPermissionGroupDirectory:
 class PermissionGroupMapper:
     """Maps permission triples to lazily-created groups."""
 
-    def __init__(self, directory: PermissionGroupDirectory, group_prefix: str) -> None:
+    def __init__(
+        self,
+        directory: PermissionGroupDirectory,
+        group_prefix: str,
+        administrative_unit_id: str | None = None,
+    ) -> None:
         self._directory = directory
         self._group_prefix = group_prefix
+        self._administrative_unit_id = administrative_unit_id
         self._cache: dict[str, str] = {}
+        self._group_to_users: dict[tuple[str, bool], set[str]] = {}
 
     def resolve_group_id(self, permissions: str) -> str:
         group_id = self._cache.get(permissions)
@@ -98,9 +114,41 @@ class PermissionGroupMapper:
             return group_id
         safe_permissions = permissions.replace("-", "_")
         display_name = f"{self._group_prefix}{safe_permissions}"
-        group_id = self._directory.ensure_group(display_name)
+        group_id = self._directory.ensure_group(
+            display_name=display_name,
+            administrative_unit_id=self._administrative_unit_id,
+        )
         self._cache[permissions] = group_id
         return group_id
+
+    def map_user_to_group(
+        self,
+        user_id: str,
+        permissions: str,
+        *,
+        default: bool,
+    ) -> str:
+        group_id = self.resolve_group_id(permissions)
+        key = (group_id, default)
+        users = self._group_to_users.setdefault(key, set())
+        users.add(user_id)
+        return group_id
+
+    def expand_group_entry(self, entry: AclEntry) -> list[AclEntry]:
+        if entry.principal_type != "group" or not entry.principal_id:
+            return [entry]
+        users = self._group_to_users.get((entry.principal_id, entry.default))
+        if not users:
+            return [entry]
+        return [
+            AclEntry(
+                principal_type="user",
+                principal_id=user_id,
+                permissions=entry.permissions,
+                default=entry.default,
+            )
+            for user_id in sorted(users)
+        ]
 
 
 class AclService:
@@ -138,7 +186,11 @@ class AclService:
         converted: list[AclEntry] = []
         for entry in entries:
             if entry.principal_type == "user" and entry.principal_id:
-                group_id = self._mapper.resolve_group_id(entry.permissions)
+                group_id = self._mapper.map_user_to_group(
+                    user_id=entry.principal_id,
+                    permissions=entry.permissions,
+                    default=entry.default,
+                )
                 converted.append(
                     AclEntry(
                         principal_type="group",
@@ -149,9 +201,17 @@ class AclService:
                 )
                 continue
             converted.append(entry)
+        return self._deduplicate_and_validate(converted)
 
+    def ungroup_entries(self, entries: list[AclEntry]) -> list[AclEntry]:
+        expanded: list[AclEntry] = []
+        for entry in entries:
+            expanded.extend(self._mapper.expand_group_entry(entry))
+        return self._deduplicate_and_validate(expanded)
+
+    def _deduplicate_and_validate(self, entries: list[AclEntry]) -> list[AclEntry]:
         deduplicated: dict[tuple[str, str, str, bool], AclEntry] = {}
-        for entry in converted:
+        for entry in entries:
             deduplicated[
                 (
                     entry.principal_type,
