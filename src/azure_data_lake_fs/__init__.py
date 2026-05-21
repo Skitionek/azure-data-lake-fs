@@ -8,7 +8,7 @@ from .acl import (
     PermissionGroupMapper,
 )
 from .client import AzureDataLakeFsClient
-from .config import AclPolicy, AzureDataLakeFsConfig, SasPolicy, ServiceBusSettings
+from .config import AclPolicy, AzureDataLakeFsConfig, SasPolicy, ServiceBusSettings, TokenCredential
 from .observer import ChangeObserver
 from .transfer import IndirectTransferService, TransferContext
 
@@ -25,5 +25,6 @@ __all__ = [
     "PermissionGroupMapper",
     "SasPolicy",
     "ServiceBusSettings",
+    "TokenCredential",
     "TransferContext",
 ]
