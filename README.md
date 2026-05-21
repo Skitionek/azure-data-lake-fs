@@ -1,42 +1,77 @@
-# Automated-reppo
+# azure-data-lake-fs
 
-A GitHub repository template providing far-reaching Copilot and automation integration, distilled from common patterns across private repositories.
+Python wrapper for Azure Data Lake Storage Gen2 with:
 
-## What's included
+- ACL redaction on read/write surfaces
+- Lazy permission-to-group mapping to reduce ACL record pressure
+- On-the-fly user ACL conversion into groups to help stay below the 64-record ACL limit
+- Indirect upload/download workflow via returned SAS URLs
+- Optional Service Bus queue observer process for change-driven handling
 
-| File | Purpose |
-|------|---------|
-| `.github/copilot-instructions.md` | Copilot coding guidelines: Conventional Commits, Changelog conventions |
-| `.github/CODEOWNERS` | Assign default reviewers to all files |
-| `.github/FUNDING.yml` | GitHub Sponsors link |
-| `.github/dependabot.yml` | Automated dependency updates (GitHub Actions + project ecosystems) |
-| `.github/workflows/codeql.yml` | CodeQL Advanced security scanning on push/PR/schedule |
-| `.github/workflows/copilot-auto-fix.yml` | Posts a `@copilot` comment when CI fails on a PR, asking it to propose a fix |
-| `.github/workflows/dependabot-automerge.yml` | Auto-approves and squash-merges Dependabot PRs |
-| `.github/workflows/lint.yml` | MegaLinter via reusable `Skitionek/lint` action: lints changed files on PRs and opens auto-fix PRs when fixable |
-| `.github/workflows/megalinter-auto-approve.yml` | Auto-approves MegaLinter fix PRs so they can be merged immediately |
-| `CHANGELOG.md` | Keep-a-Changelog template, updated by Copilot on every user-facing change |
+## Installation
 
-## Usage
-
-1. Click **Use this template** → **Create a new repository**.
-2. Adapt `.github/dependabot.yml` to your project's package ecosystems.
-3. Uncomment the language matrix entries in `.github/workflows/codeql.yml` that match your stack.
-4. If you want the Copilot auto-fix comment to trigger on a workflow other than `Tests`, update the `workflows:` list in `.github/workflows/copilot-auto-fix.yml`.
-5. To auto-merge Dependabot PRs only for minor/patch updates, edit the metadata check in `.github/workflows/dependabot-automerge.yml`.
-
-## Automation flow
-
+```bash
+pip install .
 ```
-Push / PR
-  │
-  ├─► MegaLinter (lint.yml)
-  │     └─► Opens megalinter-fixes-pr-* branch → auto-approved (megalinter-auto-approve.yml)
-  │
-  ├─► CodeQL (codeql.yml)
-  │
-  ├─► Your Tests workflow (add tests.yml to your repo)
-  │     └─► On failure → @copilot comment (copilot-auto-fix.yml)
-  │
-  └─► Dependabot PRs → auto-approved + auto-merged (dependabot-automerge.yml)
+
+For development:
+
+```bash
+pip install -e .[dev]
 ```
+
+## High-level API
+
+```python
+from azure_data_lake_fs import (
+    AclPolicy,
+    AclService,
+    AzureDataLakeFsClient,
+    AzureDataLakeFsConfig,
+    InMemoryPermissionGroupDirectory,
+    PermissionGroupMapper,
+)
+
+config = AzureDataLakeFsConfig(
+    account_name="myaccount",
+    file_system_name="myfs",
+    account_key="***",
+    acl_policy=AclPolicy(max_records=64, group_prefix="adlfs-perm-"),
+)
+
+acl_service = AclService(
+    policy=config.acl_policy,
+    mapper=PermissionGroupMapper(
+        directory=InMemoryPermissionGroupDirectory(),
+        group_prefix=config.acl_policy.group_prefix,
+    ),
+)
+
+client = AzureDataLakeFsClient.from_azure(config=config, acl_service=acl_service)
+```
+
+## ACL behavior
+
+- `get_acl(path)` returns redacted entries (`principal` is never exposed as raw object ID).
+- `set_acl(path, entries)` converts named `user` ACL records to lazily-created permission groups.
+- Conversion deduplicates resulting group ACLs and validates final ACL count against `max_records`.
+
+## Indirect data transfer
+
+- `open_download_context(path)` returns a context object with SAS URL for caller-side download.
+- `open_upload_context(path)` returns a context object with SAS URL for caller-side upload.
+- Library does not stream file bytes directly in these methods.
+
+## Change observation mode
+
+Configure `ServiceBusSettings` and construct the client with observer enabled.
+
+- `run_change_observer(handler, once=True)` processes one receive cycle.
+- `run_change_observer(handler)` starts polling until `stop_change_observer()` is called.
+
+## Architecture notes
+
+- `AclService` owns ACL parse/serialize, redaction, and user-to-group conversion.
+- `PermissionGroupMapper` lazily creates/reuses one group per permission tuple.
+- `IndirectTransferService` provides SAS-context opening semantics.
+- `ChangeObserver` encapsulates queue receive/ack loop for process-mode observation.
