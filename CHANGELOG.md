@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- User ACL entries are now converted to permission groups only when the entry count exceeds `max_records` (default 64); entries within the limit are written as-is
 - Spelling linters (`SPELL_CSPELL`, `SPELL_MISSPELL`, `SPELL_PROSELINT`, `SPELL_VALE`) now raise warnings instead of errors via `.mega-linter.yml` ([#1])
 - Bump MegaLinter from `v8` to `v9.4.0` in `lint.yml` ([#1])
 - `lint.yml` MegaLinter now auto-selects the appropriate flavor (python, javascript, java, go, ruby, php, rust, dotnet, terraform, swift, or `all`) based on changed file extensions; mixed-language PRs fall back to `all` ([#1])
