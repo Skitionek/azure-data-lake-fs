@@ -40,7 +40,11 @@ class FakeSigner:
         return f"https://example.test/{path}?perm={permissions}&exp={expiry_minutes}"
 
 
-def build_client(path_client: FakePathClient, observer: ChangeObserver | None = None, max_records: int = 64):
+def build_client(
+    path_client: FakePathClient,
+    observer: ChangeObserver | None = None,
+    max_records: int = 64,
+):
     acl_service = AclService(
         policy=AclPolicy(max_records=max_records),
         mapper=PermissionGroupMapper(
