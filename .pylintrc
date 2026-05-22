@@ -1,2 +1,11 @@
 [MESSAGES CONTROL]
-disable=import-error
+disable=
+    import-error,
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    unnecessary-ellipsis,
+    unused-argument,
+    import-outside-toplevel,
+    unnecessary-lambda

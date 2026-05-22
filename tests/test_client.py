@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from azure_data_lake_fs.acl import (
     AclEntry,
+    AclRedactedEntry,
     AclService,
     InMemoryPermissionGroupDirectory,
     PermissionGroupMapper,
@@ -75,7 +76,7 @@ def build_client(
 
 def set_acl_for_two_users(
     max_records: int = 64,
-) -> tuple[FakePathClient, list[AclEntry]]:
+) -> tuple[FakePathClient, list[AclRedactedEntry]]:
     path_client = FakePathClient(acl="")
     client = build_client(path_client, max_records=max_records)
     response = client.set_acl(
