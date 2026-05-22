@@ -88,9 +88,7 @@ class AzureDataLakeFsConfig:
         if not self.file_system_name:
             raise ValueError("file_system_name must not be empty")
         if self.account_key is None and self.credential is None:
-            raise ValueError(
-                "Either account_key or credential must be provided"
-            )
+            raise ValueError("Either account_key or credential must be provided")
         if self.account_key is not None and not self.account_key:
             raise ValueError("account_key must not be empty")
 

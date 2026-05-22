@@ -13,6 +13,7 @@ from .config import AzureDataLakeFsConfig
 class SasSigner(Protocol):
     def sign(self, path: str, permissions: str, expiry_minutes: int) -> str:
         """Return full SAS URL for the given file path and permissions."""
+        ...
 
 
 class _UserDelegationKeyProvider(Protocol):
@@ -53,14 +54,20 @@ class AzureDataLakeSasSigner:
         from azure.storage.filedatalake import FileSasPermissions, generate_file_sas
 
         normalized_path = path.lstrip("/")
+        if not normalized_path:
+            raise ValueError("path must not be empty")
+        directory_name, _, file_name = normalized_path.rpartition("/")
+        if not file_name:
+            raise ValueError("path must reference a file")
         expiry = datetime.now(UTC) + timedelta(minutes=expiry_minutes)
 
         if self._config.account_key is not None:
             token = generate_file_sas(
                 account_name=self._config.account_name,
                 file_system_name=self._config.file_system_name,
-                file_path=normalized_path,
-                account_key=self._config.account_key,
+                directory_name=directory_name,
+                file_name=file_name,
+                credential=self._config.account_key,
                 permission=FileSasPermissions.from_string(permissions),
                 expiry=expiry,
             )
@@ -77,8 +84,9 @@ class AzureDataLakeSasSigner:
             token = generate_file_sas(
                 account_name=self._config.account_name,
                 file_system_name=self._config.file_system_name,
-                file_path=normalized_path,
-                user_delegation_key=udk,
+                directory_name=directory_name,
+                file_name=file_name,
+                credential=udk,
                 permission=FileSasPermissions.from_string(permissions),
                 expiry=expiry,
             )

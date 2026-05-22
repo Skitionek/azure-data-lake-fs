@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from .acl import AclEntry, AclRedactedEntry, AclService
 from .config import AzureDataLakeFsConfig, ServiceBusSettings
@@ -14,14 +14,17 @@ from .transfer import AzureDataLakeSasSigner, IndirectTransferService
 class PathClient(Protocol):
     def get_access_control(self) -> Any:
         """Get ACL payload."""
+        ...
 
     def set_access_control(self, acl: str) -> Any:
         """Set ACL payload."""
+        ...
 
 
 class FileSystemClient(Protocol):
     def get_file_client(self, path: str) -> PathClient:
         """Get path/file client."""
+        ...
 
 
 def _extract_acl_string(payload: Any) -> str:
@@ -58,9 +61,7 @@ class AzureDataLakeFsClient:
         from azure.storage.filedatalake import DataLakeServiceClient
 
         credential = (
-            config.account_key
-            if config.account_key is not None
-            else config.credential
+            config.account_key if config.account_key is not None else config.credential
         )
         data_lake_service_client = DataLakeServiceClient(
             account_url=config.account_url,
@@ -72,9 +73,7 @@ class AzureDataLakeFsClient:
         signer = AzureDataLakeSasSigner(
             config=config,
             service_client=(
-                data_lake_service_client
-                if config.account_key is None
-                else None
+                data_lake_service_client if config.account_key is None else None
             ),
         )
         transfer_service = IndirectTransferService(
@@ -87,7 +86,7 @@ class AzureDataLakeFsClient:
             else None
         )
         return cls(
-            file_system_client=file_system_client,
+            file_system_client=cast(FileSystemClient, file_system_client),
             acl_service=acl_service,
             transfer_service=transfer_service,
             observer=observer,

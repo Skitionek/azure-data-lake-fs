@@ -86,7 +86,11 @@ def test_ungroup_entries_restores_known_user_entries() -> None:
     ungrouped_entries = service.ungroup_entries(grouped_entries)
 
     assert len(ungrouped_entries) == 2
-    principals = sorted(entry.principal_id for entry in ungrouped_entries)
+    principals = sorted(
+        entry.principal_id
+        for entry in ungrouped_entries
+        if entry.principal_id is not None
+    )
     assert principals == ["u1", "u2"]
     assert all(entry.principal_type == "user" for entry in ungrouped_entries)
 
