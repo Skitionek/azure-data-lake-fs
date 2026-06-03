@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.43.8.12551",
-      "templateHash": "5151372854373561339"
+      "version": "0.41.2.15936",
+      "templateHash": "4435367130383077373"
     }
   },
   "parameters": {
@@ -62,7 +62,11 @@
         "publicNetworkAccess": "Disabled",
         "minimumTlsVersion": "TLS1_2",
         "supportsHttpsTrafficOnly": true,
-        "isHnsEnabled": true
+        "isHnsEnabled": true,
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Deny"
+        }
       }
     },
     {
@@ -92,7 +96,7 @@
     },
     {
       "type": "Microsoft.EventGrid/systemTopics",
-      "apiVersion": "2023-06-01-preview",
+      "apiVersion": "2023-12-15-preview",
       "name": "[variables('systemTopicName')]",
       "location": "[parameters('location')]",
       "tags": "[parameters('tags')]",
@@ -109,7 +113,7 @@
     },
     {
       "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
-      "apiVersion": "2023-06-01-preview",
+      "apiVersion": "2023-12-15-preview",
       "name": "[format('{0}/{1}', variables('systemTopicName'), variables('eventSubscriptionName'))]",
       "properties": {
         "destination": {
@@ -143,7 +147,7 @@
     },
     "dataLakeFileSystemEndpoint": {
       "type": "string",
-      "value": "[format('https://{0}.dfs.core.windows.net', variables('storageAccountName'))]"
+      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2023-05-01').primaryEndpoints.dfs]"
     },
     "serviceBusNamespaceId": {
       "type": "string",
