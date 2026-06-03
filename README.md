@@ -95,4 +95,4 @@ It provisions:
 - Service Bus namespace + queue
 - Event Grid system topic and subscription that forwards storage events to the queue
 
-The storage account template enables trusted Azure service bypass and disables public network access by default.
+The storage account template disables public network access by default.
