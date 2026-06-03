@@ -1,0 +1,156 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.43.8.12551",
+      "templateHash": "220671535596785592"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for resources."
+      }
+    },
+    "namePrefix": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 11,
+      "metadata": {
+        "description": "Unique prefix for resource names."
+      }
+    },
+    "queueName": {
+      "type": "string",
+      "defaultValue": "adlfs-events",
+      "metadata": {
+        "description": "Service Bus queue name used for change events."
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Optional tags to apply to all resources."
+      }
+    }
+  },
+  "variables": {
+    "storageAccountName": "[toLower(format('{0}adls', parameters('namePrefix')))]",
+    "serviceBusNamespaceName": "[toLower(format('{0}sb', parameters('namePrefix')))]",
+    "systemTopicName": "[format('{0}-stg-events', parameters('namePrefix'))]",
+    "eventSubscriptionName": "storage-to-servicebus"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "kind": "StorageV2",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "properties": {
+        "accessTier": "Hot",
+        "allowBlobPublicAccess": false,
+        "minimumTlsVersion": "TLS1_2",
+        "supportsHttpsTrafficOnly": true,
+        "isHnsEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[variables('serviceBusNamespaceName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Standard"
+      }
+    },
+    {
+      "type": "Microsoft.ServiceBus/namespaces/queues",
+      "apiVersion": "2022-10-01-preview",
+      "name": "[format('{0}/{1}', variables('serviceBusNamespaceName'), parameters('queueName'))]",
+      "properties": {
+        "requiresDuplicateDetection": false,
+        "deadLetteringOnMessageExpiration": true,
+        "maxDeliveryCount": 10,
+        "lockDuration": "PT1M"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.EventGrid/systemTopics",
+      "apiVersion": "2023-06-01-preview",
+      "name": "[variables('systemTopicName')]",
+      "location": "[parameters('location')]",
+      "tags": "[parameters('tags')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "source": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+        "topicType": "Microsoft.Storage.StorageAccounts"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.EventGrid/systemTopics/eventSubscriptions",
+      "apiVersion": "2023-06-01-preview",
+      "name": "[format('{0}/{1}', variables('systemTopicName'), variables('eventSubscriptionName'))]",
+      "properties": {
+        "destination": {
+          "endpointType": "ServiceBusQueue",
+          "properties": {
+            "resourceId": "[resourceId('Microsoft.ServiceBus/namespaces/queues', variables('serviceBusNamespaceName'), parameters('queueName'))]"
+          }
+        },
+        "filter": {
+          "includedEventTypes": [
+            "Microsoft.Storage.BlobCreated",
+            "Microsoft.Storage.BlobDeleted"
+          ],
+          "enableAdvancedFilteringOnArrays": true
+        },
+        "retryPolicy": {
+          "maxDeliveryAttempts": 5,
+          "eventTimeToLiveInMinutes": 1440
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ServiceBus/namespaces/queues', variables('serviceBusNamespaceName'), parameters('queueName'))]",
+        "[resourceId('Microsoft.EventGrid/systemTopics', variables('systemTopicName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "storageAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+    },
+    "dataLakeFileSystemEndpoint": {
+      "type": "string",
+      "value": "[format('https://{0}.dfs.core.windows.net', variables('storageAccountName'))]"
+    },
+    "serviceBusNamespaceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]"
+    },
+    "serviceBusQueueId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.ServiceBus/namespaces/queues', variables('serviceBusNamespaceName'), parameters('queueName'))]"
+    }
+  }
+}
