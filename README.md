@@ -95,4 +95,4 @@ It provisions:
 - Service Bus namespace + queue
 - Event Grid system topic and subscription that forwards storage events to the queue
 
-The storage account template enables trusted Azure service bypass and denies all other public network access by default. Pass `storageAccountIpRules` when you need to allow specific public IPv4 addresses or CIDR ranges.
+The storage account template enables trusted Azure service bypass and disables public network access by default.
