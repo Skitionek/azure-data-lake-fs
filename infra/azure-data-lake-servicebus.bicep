@@ -34,6 +34,10 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
     isHnsEnabled: true
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Deny'
+    }
   }
 }
 
@@ -58,7 +62,7 @@ resource serviceBusQueue 'Microsoft.ServiceBus/namespaces/queues@2022-10-01-prev
   }
 }
 
-resource systemTopic 'Microsoft.EventGrid/systemTopics@2023-06-01-preview' = {
+resource systemTopic 'Microsoft.EventGrid/systemTopics@2023-12-15-preview' = {
   name: systemTopicName
   location: location
   tags: tags
@@ -71,7 +75,7 @@ resource systemTopic 'Microsoft.EventGrid/systemTopics@2023-06-01-preview' = {
   }
 }
 
-resource eventSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@2023-06-01-preview' = {
+resource eventSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@2023-12-15-preview' = {
   parent: systemTopic
   name: eventSubscriptionName
   properties: {
@@ -96,6 +100,6 @@ resource eventSubscription 'Microsoft.EventGrid/systemTopics/eventSubscriptions@
 }
 
 output storageAccountId string = storageAccount.id
-output dataLakeFileSystemEndpoint string = 'https://${storageAccount.name}.dfs.core.windows.net'
+output dataLakeFileSystemEndpoint string = storageAccount.properties.primaryEndpoints.dfs
 output serviceBusNamespaceId string = serviceBusNamespace.id
 output serviceBusQueueId string = serviceBusQueue.id
