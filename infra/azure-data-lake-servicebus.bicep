@@ -11,6 +11,9 @@ param namePrefix string
 @description('Service Bus queue name used for change events.')
 param queueName string = 'adlfs-events'
 
+@description('Optional IPv4 addresses or CIDR ranges allowed to access the storage account public endpoint.')
+param storageAccountIpRules array = []
+
 @description('Optional tags to apply to all resources.')
 param tags object = {}
 
@@ -30,9 +33,18 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   properties: {
     accessTier: 'Hot'
     allowBlobPublicAccess: false
+    publicNetworkAccess: 'Enabled'
     minimumTlsVersion: 'TLS1_2'
     supportsHttpsTrafficOnly: true
     isHnsEnabled: true
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Deny'
+      ipRules: [for ipRule in storageAccountIpRules: {
+        action: 'Allow'
+        value: ipRule
+      }]
+    }
   }
 }
 

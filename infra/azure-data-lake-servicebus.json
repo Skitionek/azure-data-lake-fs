@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.43.8.12551",
-      "templateHash": "220671535596785592"
+      "templateHash": "10137089575298440664"
     }
   },
   "parameters": {
@@ -29,6 +29,13 @@
       "defaultValue": "adlfs-events",
       "metadata": {
         "description": "Service Bus queue name used for change events."
+      }
+    },
+    "storageAccountIpRules": {
+      "type": "array",
+      "defaultValue": [],
+      "metadata": {
+        "description": "Optional IPv4 addresses or CIDR ranges allowed to access the storage account public endpoint."
       }
     },
     "tags": {
@@ -59,9 +66,24 @@
       "properties": {
         "accessTier": "Hot",
         "allowBlobPublicAccess": false,
+        "publicNetworkAccess": "Enabled",
         "minimumTlsVersion": "TLS1_2",
         "supportsHttpsTrafficOnly": true,
-        "isHnsEnabled": true
+        "isHnsEnabled": true,
+        "networkAcls": {
+          "copy": [
+            {
+              "name": "ipRules",
+              "count": "[length(parameters('storageAccountIpRules'))]",
+              "input": {
+                "action": "Allow",
+                "value": "[parameters('storageAccountIpRules')[copyIndex('ipRules')]]"
+              }
+            }
+          ],
+          "bypass": "AzureServices",
+          "defaultAction": "Deny"
+        }
       }
     },
     {
