@@ -28,7 +28,7 @@ jobs:
         include:
           - language: actions
             build-mode: none
-          - language: javascript-typescript
+          - language: python
             build-mode: none
 
     steps:
