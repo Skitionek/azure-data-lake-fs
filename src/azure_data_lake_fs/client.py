@@ -132,37 +132,62 @@ class AzureDataLakeFsClient:
             self._observer.stop()
 
 
+class AzureQueueReceiver:
+    """Wrap a Service Bus queue receiver and own its parent client.
+
+    A fresh :class:`ServiceBusClient` is created for every poll cycle, so the
+    wrapper must close it — not just the receiver — to avoid leaking one AMQP
+    connection/socket per cycle. Closing the client also closes its child
+    receivers, so we prefer closing the client. ``close`` is idempotent.
+    """
+
+    def __init__(self, client: Any, receiver: Any) -> None:
+        self._client = client
+        self._receiver = receiver
+        self._closed = False
+
+    def receive_messages(
+        self, max_message_count: int, max_wait_time: int
+    ) -> list[Any]:
+        return list(
+            self._receiver.receive_messages(
+                max_message_count=max_message_count,
+                max_wait_time=max_wait_time,
+            )
+        )
+
+    def complete_message(self, message: Any) -> None:
+        self._receiver.complete_message(message)
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        # Closing the client closes its child receivers too; still close the
+        # receiver first so cleanup is best-effort even if the client raises.
+        try:
+            self._receiver.close()
+        finally:
+            self._client.close()
+
+
 def _build_observer_from_service_bus(
     settings: ServiceBusSettings,
+    client_factory: Callable[[], Any] | None = None,
 ) -> ChangeObserver:
-    from azure.servicebus import ServiceBusClient
+    def _default_client_factory() -> Any:
+        from azure.servicebus import ServiceBusClient
 
-    class AzureQueueReceiver:
-        def __init__(self, receiver: Any) -> None:
-            self._receiver = receiver
-
-        def receive_messages(
-            self, max_message_count: int, max_wait_time: int
-        ) -> list[Any]:
-            return list(
-                self._receiver.receive_messages(
-                    max_message_count=max_message_count,
-                    max_wait_time=max_wait_time,
-                )
-            )
-
-        def complete_message(self, message: Any) -> None:
-            self._receiver.complete_message(message)
-
-        def close(self) -> None:
-            self._receiver.close()
-
-    def receiver_factory() -> QueueReceiver:
-        service_bus_client = ServiceBusClient.from_connection_string(
+        return ServiceBusClient.from_connection_string(
             conn_str=settings.connection_string
         )
+
+    make_client = client_factory or _default_client_factory
+
+    def receiver_factory() -> QueueReceiver:
+        service_bus_client = make_client()
         receiver = service_bus_client.get_queue_receiver(queue_name=settings.queue_name)
-        return AzureQueueReceiver(receiver)
+        return AzureQueueReceiver(service_bus_client, receiver)
 
     return ChangeObserver(
         receiver_factory=receiver_factory,
