@@ -16,6 +16,7 @@ from .config import (
     TokenCredential,
 )
 from .observer import ChangeObserver
+from .publisher import ChangePublisher
 from .transfer import IndirectTransferService, TransferContext
 
 __all__ = [
@@ -26,6 +27,7 @@ __all__ = [
     "AzureDataLakeFsClient",
     "AzureDataLakeFsConfig",
     "ChangeObserver",
+    "ChangePublisher",
     "InMemoryPermissionGroupDirectory",
     "IndirectTransferService",
     "PermissionGroupMapper",
