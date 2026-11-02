@@ -58,7 +58,7 @@ def _extract_acl_string(payload: Any) -> str:
 class AzureDataLakeFsClient:
     """High-level wrapper for ACL-safe and indirect-transfer file operations."""
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         file_system_client: FileSystemClient,
         acl_service: AclService | None,
@@ -135,7 +135,7 @@ class AzureDataLakeFsClient:
     def exists(self, path: str) -> bool:
         return self._file_system_client.get_file_client(path).exists()
 
-    def upload(
+    def upload(  # pylint: disable=too-many-arguments
         self,
         path: str,
         data: Any,
