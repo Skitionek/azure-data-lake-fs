@@ -69,3 +69,20 @@ def test_signer_rejects_directory_path() -> None:
 
     with pytest.raises(ValueError, match="path must reference a file"):
         signer.sign("folder/", "r", 5)
+
+
+def test_signer_builds_url_on_configured_endpoint() -> None:
+    config = AzureDataLakeFsConfig(
+        account_name="devstoreaccount1",
+        file_system_name="fs",
+        account_key="a2V5PQ==",
+        endpoint="http://127.0.0.1:10000/devstoreaccount1/",
+    )
+    signer = AzureDataLakeSasSigner(config=config)
+
+    url = signer.sign("folder/my file.txt", "r", 5)
+
+    base, _, query = url.partition("?")
+    assert base == "http://127.0.0.1:10000/devstoreaccount1/fs/folder/my%20file.txt"
+    assert "sp=r" in query
+    assert "sig=" in query

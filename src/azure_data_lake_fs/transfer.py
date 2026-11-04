@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Literal, Protocol
 from urllib.parse import quote
 
@@ -59,7 +59,7 @@ class AzureDataLakeSasSigner:
         directory_name, _, file_name = normalized_path.rpartition("/")
         if not file_name:
             raise ValueError("path must reference a file")
-        expiry = datetime.now(UTC) + timedelta(minutes=expiry_minutes)
+        expiry = datetime.now(timezone.utc) + timedelta(minutes=expiry_minutes)
 
         if self._config.account_key is not None:
             token = generate_file_sas(
@@ -76,7 +76,7 @@ class AzureDataLakeSasSigner:
                 raise ValueError(
                     "service_client is required for token-credential SAS signing"
                 )
-            start = datetime.now(UTC) - timedelta(minutes=5)
+            start = datetime.now(timezone.utc) - timedelta(minutes=5)
             udk = self._service_client.get_user_delegation_key(
                 key_start_time=start,
                 key_expiry_time=expiry,
