@@ -6,7 +6,8 @@ Python wrapper for Azure Data Lake Storage Gen2 with:
 - Lazy permission-to-group mapping to reduce ACL record pressure
 - On-the-fly user ACL conversion into groups to help stay below the 64-record ACL limit
 - Indirect upload/download workflow via returned SAS URLs
-- Optional Service Bus queue observer process for change-driven handling
+- Direct uploads, existence checks and file-system bootstrap for server-side callers
+- Optional Service Bus queue observer and publisher for change-driven handling
 
 ## Installation
 
@@ -55,6 +56,26 @@ acl_service = AclService(
 client = AzureDataLakeFsClient.from_azure(config=config, acl_service=acl_service)
 ```
 
+`acl_service` is optional; without it `get_acl`/`set_acl` raise `ValueError`.
+
+### Authentication and endpoints
+
+- `account_key`: shared-key auth; SAS URLs are signed with the key.
+- `credential`: any token credential (e.g. `DefaultAzureCredential`); SAS URLs are signed with a
+  user-delegation key.
+- `endpoint`: overrides `https://<account>.dfs.core.windows.net`, e.g. for Azurite.
+- `AzureDataLakeFsConfig.from_connection_string(conn_str, file_system_name, **kwargs)` builds a
+  config from a connection string carrying `AccountName` and `AccountKey`; `BlobEndpoint` becomes
+  the endpoint, as in `DataLakeServiceClient.from_connection_string`.
+
+## Storage operations
+
+- `ensure_file_system()` creates the configured file system unless it exists.
+- `exists(path)` reports whether a file exists.
+- `upload(path, data, overwrite=False, metadata=None, content_type=None)` writes bytes, text or a
+  readable stream.
+- `url_for(path)` returns the unsigned file URL.
+
 ## ACL behavior
 
 - `get_acl(path)` returns redacted entries (`principal` is never exposed as raw object ID).
@@ -71,10 +92,12 @@ client = AzureDataLakeFsClient.from_azure(config=config, acl_service=acl_service
 
 ## Change observation mode
 
-Configure `ServiceBusSettings` and construct the client with observer enabled.
+Pass `ServiceBusSettings` as `service_bus_settings` to `from_azure` to enable the observer and the
+publisher on the same queue.
 
 - `run_change_observer(handler, once=True)` processes one receive cycle.
 - `run_change_observer(handler)` starts polling until `stop_change_observer()` is called.
+- `publish_change(event)` sends `event` to the queue as a JSON message.
 
 ## Architecture notes
 
@@ -82,6 +105,7 @@ Configure `ServiceBusSettings` and construct the client with observer enabled.
 - `PermissionGroupMapper` lazily creates/reuses one group per permission tuple.
 - `IndirectTransferService` provides SAS-context opening semantics.
 - `ChangeObserver` encapsulates queue receive/ack loop for process-mode observation.
+- `ChangePublisher` serializes change events and hands them to the queue sender.
 
 ## Infrastructure bootstrap
 

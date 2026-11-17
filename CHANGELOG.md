@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `AzureDataLakeFsConfig.endpoint` overrides the default account URL (e.g. for Azurite), and `AzureDataLakeFsConfig.from_connection_string` builds a config from an Azure Storage connection string ([#53])
+- `AzureDataLakeFsClient.ensure_file_system`, `exists`, `upload` and `url_for` for server-side storage access ([#53])
+- `ChangePublisher` and `AzureDataLakeFsClient.publish_change` send change events to the Service Bus queue configured by `ServiceBusSettings` ([#53])
+- Test workflow running the unit tests on Python 3.10, 3.11 and 3.12 ([#53])
 - Support any Azure credential (e.g. `DefaultAzureCredential`) in `AzureDataLakeFsConfig` via new optional `credential` field; `account_key` is now optional when `credential` is supplied ([#2])
 - `AzureDataLakeSasSigner` obtains a user-delegation key at runtime when a token credential is used instead of an account key ([#2])
 - Add Python package `azure-data-lake-fs` with configurable Azure Data Lake wrapper API for ACL operations, indirect transfer contexts, and change observation flow ([#1])
@@ -20,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Support Python 3.10 (`requires-python` lowered from `>=3.11`) ([#53])
+- `acl_service` is optional in `AzureDataLakeFsClient` and `from_azure`; ACL operations raise `ValueError` when it is not configured ([#53])
+- Account-key auth passes an `AzureNamedKeyCredential` to the SDK, so it also works on custom endpoints ([#53])
+- Declare `azure-core` as a direct dependency ([#53])
 - User ACL entries are now converted to permission groups only when the entry count exceeds `max_records` (default 64); entries within the limit are written as-is
 - Spelling linters (`SPELL_CSPELL`, `SPELL_MISSPELL`, `SPELL_PROSELINT`, `SPELL_VALE`) now raise warnings instead of errors via `.mega-linter.yml` ([#1])
 - Bump MegaLinter from `v8` to `v9.4.0` in `lint.yml` ([#1])
@@ -37,3 +45,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [Unreleased]: https://github.com/Skitionek/template
 [#1]: https://github.com/Skitionek/azure-data-lake-fs/pull/1
 [#2]: https://github.com/Skitionek/azure-data-lake-fs/pull/2
+[#53]: https://github.com/Skitionek/azure-data-lake-fs/pull/53
